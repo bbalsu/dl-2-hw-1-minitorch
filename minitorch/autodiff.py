@@ -22,8 +22,10 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError('Need to implement for Task 1.1')
+    vals1 = list(vals)
+    vals2 = list(vals)
+    vals1[arg], vals2[arg] = vals[arg] + epsilon, vals[arg] - epsilon
+    return (f(*vals1) - f(*vals2)) / (2 * epsilon)
 
 
 variable_count = 1
@@ -61,8 +63,26 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    visited = set()
+    order: List[Variable] = []
+
+    def dfs(node: Variable) -> None:
+        if node.is_constant():
+            return
+
+        if node.unique_id in visited:
+            return
+
+        visited.add(node.unique_id)
+
+        for parent in node.parents:
+            dfs(parent)
+
+        order.append(node)
+
+    dfs(variable)
+    order.reverse()
+    return order
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -76,8 +96,20 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    derivatives = {variable.unique_id: deriv}
+
+    for node in topological_sort(variable):
+        node_derivative = derivatives[node.unique_id]
+
+        if node.is_leaf():
+            node.accumulate_derivative(node_derivative)
+            continue
+
+        for parent, parent_derivative in node.chain_rule(node_derivative):
+            if parent.unique_id not in derivatives:
+                derivatives[parent.unique_id] = 0.0
+
+            derivatives[parent.unique_id] += parent_derivative
 
 
 @dataclass
